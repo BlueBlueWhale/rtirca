@@ -1,4 +1,5 @@
 import pytest
+
 from ultralytics import YOLO
 from ultralytics.models.rtirca.activation_hooks import ActivationHooks
 from ultralytics.utils import ASSETS
@@ -61,7 +62,7 @@ def test_activation_hooks_capture(model, registered_hooks, activation_layers):
 
         # Verify activation shape is reasonable (not empty)
         activation = registered_hooks.activations[str(layer_id)]
-        
+
         # Handle case where activation might be a tuple (common in detection models)
         if isinstance(activation, tuple):
             # Use the first element of the tuple which is typically the feature map
@@ -69,11 +70,15 @@ def test_activation_hooks_capture(model, registered_hooks, activation_layers):
         else:
             # Direct tensor case
             activation_shape = activation.shape
-            
-        assert activation_shape is not None and len(activation_shape) >= 3, f"Unexpected activation for layer {layer_id}: {type(activation)}"
+
+        assert activation_shape is not None and len(activation_shape) >= 3, (
+            f"Unexpected activation for layer {layer_id}: {type(activation)}"
+        )
 
         # Print activation shapes for debugging (optional)
-        print(f"Layer {layer_id} activation shape: {activation_shape}, type: {type(registered_hooks.activations[str(layer_id)])}")
+        print(
+            f"Layer {layer_id} activation shape: {activation_shape}, type: {type(registered_hooks.activations[str(layer_id)])}"
+        )
 
 
 def test_activation_hooks_cleanup(registered_hooks):

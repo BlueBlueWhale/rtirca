@@ -1,25 +1,23 @@
-"""
-This module provides functionality for mapping weights from pretrained yolo models to RTIRCA models.
-"""
+"""This module provides functionality for mapping weights from pretrained yolo models to RTIRCA models."""
+
+from __future__ import annotations
 
 import argparse
 import logging
+
 import torch
-from typing import Dict, List, Optional
 
+from exp.config.config import MODEL_FILES, MODEL_STRUCTURES
 from ultralytics import YOLO
-
-from exp.config.config import MODEL_STRUCTURES, MODEL_FILES
 
 # module logger (do not configure globally here; configure in __main__ when run as script)
 logger = logging.getLogger(__name__)
 
 
 class RTIRCAInit:
-    """RTIRCA model initialization, weight mapping and verification"""
+    """RTIRCA model initialization, weight mapping and verification."""
 
     def __init__(self, rtirca_name: str):
-
         self.rtirca_name = rtirca_name
         self.rtirca_yaml = MODEL_FILES[rtirca_name].get("yaml")
         self.rtirca_ckpt = MODEL_FILES[rtirca_name].get("ckpt")
@@ -33,8 +31,8 @@ class RTIRCAInit:
         self.insertion = MODEL_STRUCTURES[rtirca_name].get("insertion")
 
         # Weights will be lazily initialized, mapped, and verified
-        self._yolo: Optional[YOLO] = None
-        self._rtirca: Optional[YOLO] = None
+        self._yolo: YOLO | None = None
+        self._rtirca: YOLO | None = None
 
     @property
     def yolo(self) -> YOLO:
@@ -53,8 +51,7 @@ class RTIRCAInit:
         return self._rtirca
 
     def map_weights(self) -> None:
-        """
-        Map RTIRCA model weights.
+        """Map RTIRCA model weights.
 
         Returns:
             None
@@ -73,9 +70,7 @@ class RTIRCAInit:
         logger.debug("%s model weights mapped successfully!", self.rtirca_name)
 
     def verify_model_weights(self) -> None:
-        """
-        Verify if model weights are correctly mapped.
-        """
+        """Verify if model weights are correctly mapped."""
         yolo_state_dict = self.yolo.model.model.state_dict()
         rtirca_state_dict = self.rtirca.model.model.state_dict()
 
@@ -103,9 +98,8 @@ class RTIRCAInit:
         self._print_verification_results(total_param_groups, successfully_mapped)
         logger.debug("Verification completed for %s", self.rtirca_name)
 
-    def _get_layer_index(self, param_name: str) -> Optional[int]:
-        """
-        Extract layer index from parameter name.
+    def _get_layer_index(self, param_name: str) -> int | None:
+        """Extract layer index from parameter name.
 
         Args:
             param_name: Parameter name in the format 'X.param_name' where X is the layer index
@@ -123,8 +117,7 @@ class RTIRCAInit:
         return None
 
     def _map_parameter_name(self, param_name: str, layer_idx: int) -> str:
-        """
-        Map parameter name based on layer index.
+        """Map parameter name based on layer index.
 
         Args:
             param_name: Original parameter name from the source model
@@ -134,13 +127,13 @@ class RTIRCAInit:
             str: Mapped parameter name for the target model architecture
         """
         # Replace only the specific numeric token corresponding to the layer index
-        parts = param_name.split('.')
+        parts = param_name.split(".")
         for i, p in enumerate(parts):
             if p.isdigit() and int(p) == layer_idx:
                 if layer_idx <= self.insertion:
                     return param_name
                 parts[i] = str(layer_idx + 1)
-                return '.'.join(parts)
+                return ".".join(parts)
 
         # Fallback behavior: use simple replace (keeps prior semantics)
         if layer_idx <= self.insertion:
@@ -148,17 +141,15 @@ class RTIRCAInit:
         new_layer_idx = layer_idx + 1
         return param_name.replace(f"{layer_idx}.", f"{new_layer_idx}.", 1)
 
-    def _create_weight_mapping(self, yolo_state_dict: Dict, rtirca_state_dict: Dict) -> Dict:
-        """
-        Create weight mapping dictionary.
+    def _create_weight_mapping(self, yolo_state_dict: dict, rtirca_state_dict: dict) -> dict:
+        """Create weight mapping dictionary.
 
         Args:
             yolo_state_dict: State dictionary of the yolo model
             rtirca_state_dict: State dictionary of the RTIRCA model
 
         Returns:
-            Dict: Mapping dictionary with RTIRCA parameter names as keys and
-                 yolo parameter tensors as values
+            Dict: Mapping dictionary with RTIRCA parameter names as keys and yolo parameter tensors as values
         """
         new_state_dict = {}
 
@@ -176,8 +167,7 @@ class RTIRCAInit:
         return new_state_dict
 
     def _print_verification_results(self, total_param_groups: int, successfully_mapped: int) -> None:
-        """
-        Print verification result statistics.
+        """Print verification result statistics.
 
         Args:
             total_param_groups: Total number of parameter groups in the model
@@ -187,14 +177,12 @@ class RTIRCAInit:
         logger.debug("  Successfully mapped parameter groups: %d", successfully_mapped)
 
 
-def batch_init_and_verify(model_names: Optional[List[str]] = None) -> None:
-    """
-    Batch initialize and verify multiple models.
+def batch_init_and_verify(model_names: list[str] | None = None) -> None:
+    """Batch initialize and verify multiple models.
 
-    This function runs mapping and verification for each provided model name.
-    If no models are provided (None or empty list), the function returns early.
+    This function runs mapping and verification for each provided model name. If no models are provided (None or empty
+    list), the function returns early.
     """
-
     if not model_names:
         logger.info("No models provided to batch_init_and_verify; nothing to do.")
         return

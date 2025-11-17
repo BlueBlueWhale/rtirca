@@ -1,9 +1,10 @@
 from ultralytics.nn.tasks import DetectionModel
+
 from .loss import MLKDLoss
 
 
 class RTIRCA(DetectionModel):
-    """RTIRCA (Real-time Infrared Context Aggregation) model for Substation Equipment Detection"""
+    """RTIRCA (Real-time Infrared Context Aggregation) model for Substation Equipment Detection."""
 
     def __init__(
         self,

@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 
+
 class IRCA(nn.Module):
     def __init__(self, in_channels, scale=16, k_size=None):
-        super(IRCA, self).__init__()
+        super().__init__()
         if k_size is None:
             k_size = [3, 5, 7]
         self.k_size = k_size
@@ -25,8 +26,15 @@ class IRCA(nn.Module):
         for k in range(len(k_size)):
             self.focal_layers.append(
                 nn.Sequential(
-                    nn.Conv2d(in_channels, in_channels, kernel_size=k_size[k], stride=1,
-                              groups=in_channels, padding=k_size[k] // 2, bias=False),
+                    nn.Conv2d(
+                        in_channels,
+                        in_channels,
+                        kernel_size=k_size[k],
+                        stride=1,
+                        groups=in_channels,
+                        padding=k_size[k] // 2,
+                        bias=False,
+                    ),
                     nn.GELU(),
                 )
             )
@@ -37,7 +45,7 @@ class IRCA(nn.Module):
         x = self._contextAggregation(x)
         # key -> [b, 1, H, W] -> [b, 1, H*W] ->  [b, H*W, 1]
         key = self.SoftMax(self.Conv_key(x).view(b, 1, -1).permute(0, 2, 1).view(b, -1, 1).contiguous())
-        query = x.view(b, c, h*w)
+        query = x.view(b, c, h * w)
         # [b, c, h*w] * [b, H*W, 1]
         concate_QK = torch.matmul(query, key)
         concate_QK = concate_QK.view(b, c, 1, 1).contiguous()
@@ -53,8 +61,7 @@ class IRCA(nn.Module):
         ctx_all = 0
         for l in range(focal_level):
             ctx = self.focal_layers[l](ctx)
-            ctx_all = ctx_all + ctx * gates[:, l:l + 1]
+            ctx_all = ctx_all + ctx * gates[:, l : l + 1]
         ctx_global = self.pooling(ctx)
         ctx_all = ctx_all + ctx_global * gates[:, focal_level:]
         return ctx_all
-
