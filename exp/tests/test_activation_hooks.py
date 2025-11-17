@@ -59,10 +59,10 @@ def test_activation_hooks_capture(model, registered_hooks, activation_layers):
     for layer_id in activation_layers:
         assert str(layer_id) in registered_hooks.activations, f"No activations captured for layer {layer_id}"
 
-        # Verify activation shape is reasonable (not empty)
+        # Verify activation shape is not empty
         activation = registered_hooks.activations[str(layer_id)]
         
-        # Handle case where activation might be a tuple (common in detection models)
+        # Handle case where activation might be a tuple (such as in a detection head)
         if isinstance(activation, tuple):
             # Use the first element of the tuple which is typically the feature map
             activation_shape = activation[0].shape if len(activation) > 0 else None
@@ -72,7 +72,7 @@ def test_activation_hooks_capture(model, registered_hooks, activation_layers):
             
         assert activation_shape is not None and len(activation_shape) >= 3, f"Unexpected activation for layer {layer_id}: {type(activation)}"
 
-        # Print activation shapes for debugging (optional)
+        # Print activation shapes
         print(f"Layer {layer_id} activation shape: {activation_shape}, type: {type(registered_hooks.activations[str(layer_id)])}")
 
 
