@@ -7,7 +7,7 @@ from ultralytics.utils import ASSETS
 
 @pytest.fixture
 def model():
-    """Create and return a RT-IRCA model for testing."""
+    """Create and return a RTIRCA model for testing."""
     return YOLO("exp/config/rtirca11n.yaml")
 
 
