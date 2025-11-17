@@ -22,7 +22,7 @@ The training workflow consists of three steps: initializing weights, training th
 
 ```bash
 cd exp
-python rtirca_init.py -m rtirca11l rtirca11n
+python init_weights.py -m rtirca11l rtirca11n
 ```
 
 ### 2. Train the Teacher Model
