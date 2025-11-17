@@ -1,9 +1,8 @@
 import argparse
 
-from ultralytics.models.yolo.model import YOLO
+from exp.config.config import MODEL_FILES, MODEL_STRUCTURES
 from ultralytics.models.rtirca.train import RTIRCATrainer
-from exp.config.config import MODEL_STRUCTURES, MODEL_FILES
-
+from ultralytics.models.yolo.model import YOLO
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Run MLKD training")
