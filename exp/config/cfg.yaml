@@ -16,6 +16,6 @@ momentum: 0.937
 # MLKD specific configurations
 weight_decay: 0.0005
 temperature: 0.5 # (float) relevance loss regularization temperature
-has_rev: True # (bool) whether the knowlage distillation use the relevance loss
-has_irca: True # (bool) whether the knowlage distillation use the global feature distillation loss
-has_mut: True # (bool) whether the knowlage distillation use the mutual information loss
+has_rev: True # (bool) whether the knowledge distillation use the relevance loss
+has_irca: True # (bool) whether the knowledge distillation use the global feature distillation loss
+has_mut: True # (bool) whether the knowledge distillation use the mutual information loss

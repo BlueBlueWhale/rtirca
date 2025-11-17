@@ -1,10 +1,13 @@
 # RTIRCA Documentation
 
 ## Overview
+
 RTIRCA (Real-time Infrared Context Aggregation) is a lightweight model based on Ultralytics YOLO framework for substation equipment detection. For more details, please refer to the [paper](TBD).
 
 ## Installation
+
 Clone the repository and install dependencies:
+
 ```bash
 git clone https://github.com/BlueBlueWhale/rtirca.git
 cd rtirca
@@ -12,21 +15,25 @@ pip install .
 ```
 
 ## Model Training
+
 The training workflow consists of three steps: initializing weights, training the teacher model, and training the student model with knowledge distillation. Training scripts are provided in the `exp/` directory.
 
 ### 1. Initialize Weights
+
 ```bash
 cd exp
 python rtirca_init.py -m rtirca11l rtirca11n
 ```
 
 ### 2. Train the Teacher Model
+
 ```bash
 # Train the teacher model
 yolo train cfg=config/cfg.yaml data=config/ISED.yaml model=rtirca11l.pt
 ```
 
 ### 3. Train the Student Model with Knowledge Distillation
+
 ```bash
 # Train the student model
 python mlkd.py --data config/ISED.yaml --student rtirca11n --teacher rtirca11l --teacher-ckpt path/to/trained/weights.pt
@@ -35,13 +42,15 @@ python mlkd.py --data config/ISED.yaml --student rtirca11n --teacher rtirca11l -
 **Note:** To train with other datasets, use the appropriate dataset YAML file.
 
 ## License
-This project is based on [Ultralytics YOLO framwork](https://github.com/ultralytics/ultralytics) and is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). 
+
+This project is based on [Ultralytics YOLO framework](https://github.com/ultralytics/ultralytics) and is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
 
 You are free to copy, modify, and redistribute this software under the terms of the AGPL-3.0. If you deploy this software, or any modified version, over a network (e.g., as an API or service), you **must make the complete source code available** to the users, including all your modifications and any additional models or training scripts.
 
 Full license text: [GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html)
 
 ## Acknowledgments
+
 Special thanks to the Ultralytics team for their open-source YOLO framework.
 
 <br>

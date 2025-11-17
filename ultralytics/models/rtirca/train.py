@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .model import RTIRCA
 from ultralytics.models.yolo.detect import DetectionTrainer
 from ultralytics.utils import RANK
+
+from .model import RTIRCA
 
 
 class RTIRCATrainer(DetectionTrainer):
@@ -13,11 +14,11 @@ class RTIRCATrainer(DetectionTrainer):
     ) -> RTIRCA:
         """Return RTIRCAModel initialized with specified config and weights."""
         # Ensure float parameters are correctly converted from YAML
-        alpha = float(self.args.alpha) if hasattr(self.args, 'alpha') else 1e-3
-        beta = float(self.args.beta) if hasattr(self.args, 'beta') else 1e-8
-        gamma = float(self.args.gamma) if hasattr(self.args, 'gamma') else 1e-6
-        temperature = float(self.args.temperature) if hasattr(self.args, 'temperature') else 0.5
-        
+        alpha = float(self.args.alpha) if hasattr(self.args, "alpha") else 1e-3
+        beta = float(self.args.beta) if hasattr(self.args, "beta") else 1e-8
+        gamma = float(self.args.gamma) if hasattr(self.args, "gamma") else 1e-6
+        temperature = float(self.args.temperature) if hasattr(self.args, "temperature") else 0.5
+
         model = RTIRCA(
             cfg,
             nc=self.data["nc"],

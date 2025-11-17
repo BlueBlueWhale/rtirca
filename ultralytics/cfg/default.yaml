@@ -38,13 +38,13 @@ profile: False # (bool) profile ONNX/TensorRT speeds during training for loggers
 freeze: # (int | list, optional) freeze first N layers (int) or specific layer indices (list)
 multi_scale: False # (bool) multiscale training by varying image size
 compile: False # (bool | str) enable torch.compile() backend='inductor'; True="default", False=off, or "default|reduce-overhead|max-autotune-no-cudagraphs"
-alpha: 1e-3  # (float) spatial-channel relevances alignment loss weight
-beta: 1e-8   # (float) global feature distillation loss weight
-gamma: 1e-6  # (float) mutual information loss weight
-temperature: 0.5  # (float) relevance loss regularization temperature
-has_rev: True # (bool) whether the knowlage distillation use the relevance loss
-has_irca: True # (bool) whether the knowlage distillation use the global feature distillation loss
-has_mut: True # (bool) whether the knowlage distillation use the mutual information loss
+alpha: 1e-3 # (float) spatial-channel relevances alignment loss weight
+beta: 1e-8 # (float) global feature distillation loss weight
+gamma: 1e-6 # (float) mutual information loss weight
+temperature: 0.5 # (float) relevance loss regularization temperature
+has_rev: True # (bool) whether the knowledge distillation use the relevance loss
+has_irca: True # (bool) whether the knowledge distillation use the global feature distillation loss
+has_mut: True # (bool) whether the knowledge distillation use the mutual information loss
 activation_layers: None # (List[int]) List of layer indices for knowledge distillation
 student_channels: None # (dict) Output channel dimensions for each layer in the student model
 teacher_channels: None # (dict) Output channel dimensions for each layer in the teacher model
