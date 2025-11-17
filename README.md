@@ -1,28 +1,38 @@
-# RT-IRCA Documentation
+# RTIRCA Documentation
 
 ## Overview
-RT-IRCA (Real-time Infrared Context Aggregation) is a lightweight model based on Ultralytics YOLO framework for substation equipment detection. For more details, please refer to the [paper](TBD).
+RTIRCA (Real-time Infrared Context Aggregation) is a lightweight model based on Ultralytics YOLO framework for substation equipment detection. For more details, please refer to the [paper](TBD).
 
 ## Installation
 Clone the repository and install dependencies:
 ```bash
-git clone https://github.com/BlueBlueWhale/RT-IRCA.git
-cd RT-IRCA
+git clone https://github.com/BlueBlueWhale/rtirca.git
+cd rtirca
 pip install .
 ```
 
 ## Model Training
-The training workflow consists of two steps: pre-training the teacher model and training the student model with knowledge distillation. Training scripts are provided in the `exp/rt_irca` directory.
+The training workflow consists of three steps: initializing weights, training the teacher model, and training the student model with knowledge distillation. Training scripts are provided in the `exp/` directory.
 
-### 1. Pre-train the Teacher Model
+### 1. Initialize Weights
 ```bash
-yolo train cfg=pretrain.yaml
+cd exp
+python rtirca_init.py -m rtirca11l rtirca11n
 ```
 
-### 2. Train the Student Model with Knowledge Distillation
+### 2. Train the Teacher Model
 ```bash
-python mlkd.py
+# Train the teacher model
+yolo train cfg=config/cfg.yaml data=config/ISED.yaml model=rtirca11l.pt
 ```
+
+### 3. Train the Student Model with Knowledge Distillation
+```bash
+# Train the student model
+python mlkd.py --data config/ISED.yaml --student rtirca11n --teacher rtirca11l --teacher-ckpt path/to/trained/weights.pt
+```
+
+**Note:** To train with other datasets, use the appropriate dataset YAML file.
 
 ## License
 This project is based on [Ultralytics YOLO framwork](https://github.com/ultralytics/ultralytics) and is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). 

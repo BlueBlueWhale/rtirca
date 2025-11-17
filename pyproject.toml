@@ -78,7 +78,6 @@ dependencies = [
     "pandas>=2.3.3",
     "scikit-image>=0.25.2",
     "tqdm>=4.67.1",
-    "wandb>=0.22.2",
 ]
 
 # Optional dependencies ------------------------------------------------------------------------------------------------
@@ -144,7 +143,7 @@ ultralytics = "ultralytics.cfg:entrypoint"
 
 # Tools settings -------------------------------------------------------------------------------------------------------
 [tool.setuptools]  # configuration specific to the `setuptools` build backend.
-packages = { find = { where = ["."], include = ["ultralytics", "ultralytics.*"] } }
+packages = { find = { where = ["."], include = ["ultralytics", "ultralytics.*", "exp", "exp.*"] } }
 # Tests included below for checking Conda builds in https://github.com/conda-forge/ultralytics-feedstock
 package-data = { "ultralytics" = ["**/*.yaml", "**/*.sh", "../tests/*.py"], "ultralytics.assets" = ["*.jpg"], "ultralytics.solutions.templates" = ["*.html"]}
 

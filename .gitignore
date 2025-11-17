@@ -180,4 +180,4 @@ calibration_*.npy
 
 # Visualization: figures / tables / charts
 exp/visualization/
-exp/tests/
+exp/utils/

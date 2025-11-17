@@ -30,10 +30,10 @@ class RTIRCATrainer(DetectionTrainer):
             has_rev=self.args.has_rev,
             has_irca=self.args.has_irca,
             has_mut=self.args.has_mut,
-            teacher=self.args.teacher,
-            layer_indices=self.args.layer_indices,
+            activation_layers=self.args.activation_layers,
             student_channels=self.args.student_channels,
             teacher_channels=self.args.teacher_channels,
+            teacher_ckpt=self.args.teacher_ckpt,
         )
         if weights:
             model.load(weights)

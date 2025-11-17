@@ -3,7 +3,7 @@ from .loss import MLKDLoss
 
 
 class RTIRCA(DetectionModel):
-    """RT-IRCA (Real-time Infrared Context Aggregation) for Substation Equipment Detection"""
+    """RTIRCA (Real-time Infrared Context Aggregation) model for Substation Equipment Detection"""
 
     def __init__(
         self,
@@ -18,12 +18,11 @@ class RTIRCA(DetectionModel):
         has_rev=True,
         has_irca=True,
         has_mut=True,
-        teacher=None,
-        layer_indices=[13, 16, 19, 22],
+        teacher_ckpt=None,
+        activation_layers=[],
         student_channels=None,
         teacher_channels=None,
     ):
-        """Initialize the RTIRCA model."""
         super().__init__(cfg, nc=nc, ch=ch, verbose=verbose)
         self.alpha = alpha
         self.beta = beta
@@ -32,8 +31,8 @@ class RTIRCA(DetectionModel):
         self.has_rev = has_rev
         self.has_irca = has_irca
         self.has_mut = has_mut
-        self.teacher = teacher
-        self.layer_indices = layer_indices
+        self.teacher_ckpt = teacher_ckpt
+        self.activation_layers = activation_layers
         self.student_channels = student_channels
         self.teacher_channels = teacher_channels
 

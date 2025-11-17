@@ -1,0 +1,23 @@
+path: SJTU
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 7
+names:
+  [
+    "arrester",
+    "breaker",
+    "bushing",
+    "current-transformer",
+    "disconnector",
+    "disconnector2",
+    "insulator",
+  ]
+
+roboflow:
+  workspace: shanghai-jiao-tong-university-xwhvl
+  project: infraredimage3
+  version: 8
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/shanghai-jiao-tong-university-xwhvl/infraredimage3/dataset/8

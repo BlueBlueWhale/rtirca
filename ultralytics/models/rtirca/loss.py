@@ -6,6 +6,7 @@ from ultralytics.models.yolo.model import YOLO
 from ultralytics.utils.loss import v8DetectionLoss
 from .activation_hooks import ActivationHooks
 
+
 class MLKDLoss(v8DetectionLoss):
     """Multi-Level Knowledge Distillation (MLKD)"""
 
@@ -23,8 +24,8 @@ class MLKDLoss(v8DetectionLoss):
         self.has_rev = model.has_rev
         self.has_irca = model.has_irca
         self.has_mut = model.has_mut
-        self.teacher_model = model.teacher
-        self.layer_indices = model.layer_indices
+
+        self.activation_layers = model.activation_layers
         self.student_channels = model.student_channels
         self.teacher_channels = model.teacher_channels
 
@@ -33,13 +34,13 @@ class MLKDLoss(v8DetectionLoss):
         self.student_model = model
         self.student_activation_hooks = ActivationHooks()
         self.student_activations = self.student_activation_hooks.activations
-        self.student_activation_hooks.register_hooks(self.student_model.model, self.layer_indices)
+        self.student_activation_hooks.register_hooks(self.student_model.model, self.activation_layers)
 
-        self.teacher_model = YOLO(model.teacher)
+        self.teacher_model = YOLO(model.teacher_ckpt)
         self.teacher_model.eval()
         self.teacher_activation_hooks = ActivationHooks()
         self.teacher_activations = self.teacher_activation_hooks.activations
-        self.teacher_activation_hooks.register_hooks(self.teacher_model.model, self.layer_indices)
+        self.teacher_activation_hooks.register_hooks(self.teacher_model.model, self.activation_layers)
 
         # Get the model's dtype to ensure consistency
         model_dtype = next(model.parameters()).dtype
@@ -47,22 +48,31 @@ class MLKDLoss(v8DetectionLoss):
         # relevance loss modules
         if self.has_rev:
             self.l_rev_modules = [
-                Attention_Loss2(self.student_channels[idx], self.teacher_channels[idx], self.alpha, self.temperature).to(self.device).to(dtype=model_dtype).train()
-                for idx in self.layer_indices
+                Attention_Loss2(self.student_channels[idx], self.teacher_channels[idx], self.alpha, self.temperature)
+                .to(self.device)
+                .to(dtype=model_dtype)
+                .train()
+                for idx in self.activation_layers
             ]
 
         # global feature distillation loss modules
         if self.has_irca:
             self.l_irca_modules = [
-                GC_FocalModulationLoss(self.student_channels[idx], self.teacher_channels[idx], self.beta).to(self.device).to(dtype=model_dtype).train()
-                for idx in self.layer_indices
+                GC_FocalModulationLoss(self.student_channels[idx], self.teacher_channels[idx], self.beta)
+                .to(self.device)
+                .to(dtype=model_dtype)
+                .train()
+                for idx in self.activation_layers
             ]
 
         # mutual information loss modules
         if self.has_mut:
             self.l_mut_modules = [
-                MINE9(self.student_channels[idx], self.teacher_channels[idx], self.gamma).to(self.device).to(dtype=model_dtype).train() 
-                for idx in self.layer_indices
+                MINE9(self.student_channels[idx], self.teacher_channels[idx], self.gamma)
+                .to(self.device)
+                .to(dtype=model_dtype)
+                .train()
+                for idx in self.activation_layers
             ]
 
     def __call__(self, preds: Any, batch: dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
@@ -85,20 +95,20 @@ class MLKDLoss(v8DetectionLoss):
         # This doubles the forward passes and slows down inference in validation.
         # TODO: Initialize the criterion before the forward pass during validation.
         if not self.student_activations:
-            student_preds = self.student_model(batch["img"])
+            _ = self.student_model(batch["img"])
 
         # teacher forward pass without gradient
         with torch.no_grad():
-            teacher_preds = self.teacher_model(batch["img"])
+            _ = self.teacher_model(batch["img"])
 
         # intermediate layer distillation loss, including:
         # relevance loss, global feature distillation loss, and mutual information loss
         l_rev_irca_mut = torch.zeros(3, device=self.device)
 
         # Loop over each activation layer index
-        for i in range(4):
-            student_activation = self.student_activations[f"{self.layer_indices[i]}"]
-            teacher_activation = self.teacher_activations[f"{self.layer_indices[i]}"].clone().detach()
+        for i in range(len(self.activation_layers)):
+            student_activation = self.student_activations[f"{self.activation_layers[i]}"]
+            teacher_activation = self.teacher_activations[f"{self.activation_layers[i]}"].clone().detach()
 
             # If relevance loss is enabled, compute the relevance loss
             if self.has_rev:
@@ -153,67 +163,6 @@ class Attention_Loss2(nn.Module):
         spatial_map = torch.matmul(pool_s, pool_t).squeeze() / temp
         spatial_map = F.softmax(spatial_map.view(ns, h * w), dim=-1).view(ns, h, w)
         return spatial_map
-
-
-class GC_FocalModulationLoss(nn.Module):
-    def __init__(self, in_channel, out_channel, weight=1e-8):
-        super().__init__()
-        self.model_s = GC_FocalModulation(out_channel)
-        self.model_t = GC_FocalModulation(out_channel)
-        self.conv = nn.Conv2d(in_channel, out_channel, 1, 1, 0)
-        self.weight = weight
-
-    def forward(self, s, t):
-        s = self.conv(s)
-
-        s = self.model_s(s)
-        t = self.model_t(t)
-
-        return F.mse_loss(s, t, reduction="sum") * self.weight
-
-
-class MINE9(nn.Module):
-    """Mutual Information Neural Estimation"""
-
-    def __init__(self, in_channel, out_channel, weight=1e-6, query_dim=512):
-        super().__init__()
-        if out_channel == 256:
-            resolution = 80
-        elif out_channel == 512:
-            resolution = 40
-        elif out_channel == 1024:
-            resolution = 20
-        self.weight = weight
-        self.conv = nn.Conv2d(in_channel, out_channel, 1, 1, 0)
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(out_channel * 2, out_channel, 1, 1, 0),
-            nn.BatchNorm2d(out_channel),
-            nn.ReLU(),
-        )
-        self.query = QueryExtractor2(resolution, query_dim)
-        self.mlp = MLP2(query_dim)
-
-    def forward(self, x, y):
-        x = self.conv(x)
-
-        # joint probabilities
-        joint = torch.cat((x, y), dim=1)
-
-        # marginal probabilities
-        marginal_x = torch.cat((x, torch.zeros_like(y)), dim=1)
-        marginal_y = torch.cat((torch.zeros_like(x), y), dim=1)
-
-        # Forward through the network
-        t = self.mlp(self.query(self.conv2(joint))).squeeze(1)
-        et_x = self.mlp(self.query(self.conv2(marginal_x))).squeeze(1)
-        et_y = self.mlp(self.query(self.conv2(marginal_y))).squeeze(1)
-
-        # Compute the loss
-        mi_loss = 1 / (
-            F.kl_div(torch.log_softmax(t, dim=-1), torch.softmax(et_x * et_y, dim=-1), reduction="batchmean") + 1e-8
-        )
-
-        return mi_loss * self.weight
 
 
 class GC_FocalModulation(nn.Module):
@@ -281,22 +230,104 @@ class GC_FocalModulation(nn.Module):
         return ctx_all
 
 
+class GC_FocalModulationLoss(nn.Module):
+    def __init__(self, in_channel, out_channel, weight=1e-8):
+        super().__init__()
+        self.model_s = GC_FocalModulation(out_channel)
+        self.model_t = GC_FocalModulation(out_channel)
+        self.conv = nn.Conv2d(in_channel, out_channel, 1, 1, 0)
+        self.weight = weight
+
+    def forward(self, s, t):
+        s = self.conv(s)
+
+        s = self.model_s(s)
+        t = self.model_t(t)
+
+        return F.mse_loss(s, t, reduction="sum") * self.weight
+
+
+class MINE9(nn.Module):
+    """Mutual Information Neural Estimation"""
+
+    def __init__(self, in_channel, out_channel, weight=1e-6, query_dim=512):
+        super().__init__()
+        if out_channel == 256:
+            resolution = 80
+        elif out_channel == 512:
+            resolution = 40
+        elif out_channel == 1024:
+            resolution = 20
+        else:
+            # Ensure resolution is at least 10
+            resolution = max(10, int(20480 / out_channel))
+            # Optional: Add warning
+            # import warnings
+            # warnings.warn(f"out_channel={out_channel} not in predefined values, using calculated resolution: {resolution}")
+        self.weight = weight
+        self.conv = nn.Conv2d(in_channel, out_channel, 1, 1, 0)
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(out_channel * 2, out_channel, 1, 1, 0),
+            nn.BatchNorm2d(out_channel),
+            nn.ReLU(),
+        )
+        self.query = QueryExtractor2(resolution, query_dim)
+        self.mlp = MLP2(query_dim)
+
+    def forward(self, x, y):
+        x = self.conv(x)
+
+        # joint probabilities
+        joint = torch.cat((x, y), dim=1)
+
+        # marginal probabilities
+        marginal_x = torch.cat((x, torch.zeros_like(y)), dim=1)
+        marginal_y = torch.cat((torch.zeros_like(x), y), dim=1)
+
+        # Forward through the network
+        t = self.mlp(self.query(self.conv2(joint))).squeeze(1)
+        et_x = self.mlp(self.query(self.conv2(marginal_x))).squeeze(1)
+        et_y = self.mlp(self.query(self.conv2(marginal_y))).squeeze(1)
+
+        # Compute the loss
+        mi_loss = 1 / (
+            F.kl_div(torch.log_softmax(t, dim=-1), torch.softmax(et_x * et_y, dim=-1), reduction="batchmean") + 1e-8
+        )
+
+        return mi_loss * self.weight
+
+
 class QueryExtractor2(nn.Module):
     def __init__(self, resolution, query_dim=256):
-        super().__init__()
-        self.query_dim = query_dim
+        super(QueryExtractor2, self).__init__()
+        # Declare but don't define linear layers
+        self.query_extraction = None
+        self.key_extraction = None  # Add key matrix
         self.softmax = nn.Softmax(dim=-1)
         self.scale = query_dim**-0.5  # Scaling factor
+        self.query_dim = query_dim
+        # self.resolution = resolution
+        self._initialized = False
 
     def forward(self, x):
         b, c, h, w = x.shape
-        # Initialize Linear layers dynamically on first forward
-        in_features = h * w
-        self.query_extraction = nn.Linear(in_features, self.query_dim).to(device=x.device, dtype=x.dtype)
-        self.key_extraction = nn.Linear(in_features, self.query_dim).to(device=x.device, dtype=x.dtype)
+        
+        # Check if already initialized
+        if not self._initialized:
+            # Initialize linear layers based on actual input dimensions
+            input_dim = h * w
+            self.query_extraction = nn.Linear(input_dim, self.query_dim).to(device=x.device, dtype=x.dtype)
+            self.key_extraction = nn.Linear(input_dim, self.query_dim).to(device=x.device, dtype=x.dtype)
+            
+            # Manually register modules to the current module
+            self.add_module('query_extraction', self.query_extraction)
+            self.add_module('key_extraction', self.key_extraction)
+            
+            self._initialized = True
+
         x = x.view(b, c, h * w)
         queries = self.query_extraction(x)
-        keys = self.key_extraction(x)
+        keys = self.key_extraction(x)  # Generate keys
 
         # Scaled dot-product attention mechanism
         attention_map = torch.matmul(queries, keys.transpose(1, 2)) * self.scale

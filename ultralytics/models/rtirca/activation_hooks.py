@@ -12,11 +12,11 @@ class ActivationHooks:
         self.activations: Dict[str, torch.Tensor] = {}
         self.hooks: List[torch.utils.hooks.RemovableHandle] = []
     
-    def register_hooks(self, model: torch.nn.Module, layer_indices: List[int], prefix: str = "") -> None:
+    def register_hooks(self, model: torch.nn.Module, activation_layers: List[int], prefix: str = "") -> None:
         """Register hooks on specified layer indices."""
         self.remove_hooks()  # Remove any existing hooks first
         
-        for idx in layer_indices:
+        for idx in activation_layers:
             if hasattr(model, 'model') and isinstance(model.model, torch.nn.Module):
                 # For models with a 'model' attribute (like DetectionModel)
                 layer = model.model[idx]
