@@ -1,14 +1,17 @@
 from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from ultralytics.models.yolo.model import YOLO
 from ultralytics.utils.loss import v8DetectionLoss
+
 from .activation_hooks import ActivationHooks
 
 
 class MLKDLoss(v8DetectionLoss):
-    """Multi-Level Knowledge Distillation (MLKD)"""
+    """Multi-Level Knowledge Distillation (MLKD)."""
 
     def __init__(
         self,
@@ -76,8 +79,7 @@ class MLKDLoss(v8DetectionLoss):
             ]
 
     def __call__(self, preds: Any, batch: dict[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Compute the total loss for the student model.
+        """Compute the total loss for the student model.
 
         Args:
             preds (Any): Predictions from the student model.
@@ -156,7 +158,7 @@ class Attention_Loss2(nn.Module):
         return channel_map
 
     def _get_spatial_attention(self, s, t, temp=0.5):
-        ns, c, h, w = s.shape
+        ns, _c, h, w = s.shape
         pool_s = self.pool_channel(s.permute(0, 2, 3, 1).view(ns, h * w, -1)).view(ns, h, w, -1).unsqueeze(3)
         pool_t = self.pool_channel(t.permute(0, 2, 3, 1).view(ns, h * w, -1)).view(ns, h, w, -1).unsqueeze(4)
 
@@ -248,7 +250,7 @@ class GC_FocalModulationLoss(nn.Module):
 
 
 class MINE9(nn.Module):
-    """Mutual Information Neural Estimation"""
+    """Mutual Information Neural Estimation."""
 
     def __init__(self, in_channel, out_channel, weight=1e-6, query_dim=512):
         super().__init__()
@@ -299,7 +301,7 @@ class MINE9(nn.Module):
 
 class QueryExtractor2(nn.Module):
     def __init__(self, resolution, query_dim=256):
-        super(QueryExtractor2, self).__init__()
+        super().__init__()
         # Declare but don't define linear layers
         self.query_extraction = None
         self.key_extraction = None  # Add key matrix
@@ -311,18 +313,18 @@ class QueryExtractor2(nn.Module):
 
     def forward(self, x):
         b, c, h, w = x.shape
-        
+
         # Check if already initialized
         if not self._initialized:
             # Initialize linear layers based on actual input dimensions
             input_dim = h * w
             self.query_extraction = nn.Linear(input_dim, self.query_dim).to(device=x.device, dtype=x.dtype)
             self.key_extraction = nn.Linear(input_dim, self.query_dim).to(device=x.device, dtype=x.dtype)
-            
+
             # Manually register modules to the current module
-            self.add_module('query_extraction', self.query_extraction)
-            self.add_module('key_extraction', self.key_extraction)
-            
+            self.add_module("query_extraction", self.query_extraction)
+            self.add_module("key_extraction", self.key_extraction)
+
             self._initialized = True
 
         x = x.view(b, c, h * w)
