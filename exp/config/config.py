@@ -212,7 +212,7 @@ MODEL_STRUCTURES = {
             24: None,
         },
         "activation_layers": [14, 17, 20, 23],
-        "insertion": 10,  # IRCA module insertion position
+        "insertion": 11,  # IRCA module insertion position
         "pretrained_weights": "yolo11n",
     },
     "rtirca11l": {
@@ -244,7 +244,7 @@ MODEL_STRUCTURES = {
             24: None,
         },
         "activation_layers": [14, 17, 20, 23],
-        "insertion": 10,  # IRCA module insertion position
+        "insertion": 11,  # IRCA module insertion position
         "pretrained_weights": "yolo11l",
     },
 }
