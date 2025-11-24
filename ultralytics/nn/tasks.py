@@ -19,7 +19,6 @@ from ultralytics.nn.modules import (
     C3,
     C3TR,
     ELAN1,
-    IRCA,
     OBB,
     PSA,
     SPP,
