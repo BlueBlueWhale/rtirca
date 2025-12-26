@@ -4,16 +4,7 @@ val: valid/images
 test: test/images
 
 nc: 7
-names:
-  [
-    "arrester",
-    "breaker",
-    "bushing",
-    "current-transformer",
-    "disconnector",
-    "disconnector2",
-    "insulator",
-  ]
+names: ["arrester", "breaker", "bushing", "current-transformer", "disconnector", "disconnector2", "insulator"]
 
 roboflow:
   workspace: shanghai-jiao-tong-university-xwhvl
